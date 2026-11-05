@@ -1,0 +1,17 @@
+{
+  "name": "penalty-duel",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Realtime two-player penalty shootout game",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "socket.io-client": "^4.8.4"
+  }
+}

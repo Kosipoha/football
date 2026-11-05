@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10251f">
+  <title>ПЕНАЛЬТИ — матч один на один</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap');
+
+    :root {
+      color-scheme: dark;
+      --ink: #f3f0e5;
+      --muted: #a7b0a7;
+      --pitch: #10251f;
+      --panel: #19332b;
+      --line: #355044;
+      --lime: #d7f36a;
+      --coral: #ff765e;
+      --cream: #f3f0e5;
+      --mono: 'DM Mono', monospace;
+      --display: 'Barlow Condensed', Impact, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      min-height: 100vh;
+      color: var(--ink);
+      background-color: var(--pitch);
+      background-image: linear-gradient(90deg, transparent 49.9%, #ffffff08 50%, transparent 50.1%), repeating-linear-gradient(0deg, #ffffff05 0 1px, transparent 1px 5px);
+      font-family: var(--mono);
+    }
+    button, input { font: inherit; }
+    button { color: inherit; }
+    .shell { max-width: 1440px; min-height: 100vh; margin: auto; padding: 22px 34px 30px; display: flex; flex-direction: column; }
+    header { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); padding-bottom: 15px; }
+    .brand { display: flex; align-items: center; gap: 12px; font: 800 24px/1 var(--display); letter-spacing: 1.4px; }
+    .brand-mark { width: 28px; height: 28px; display: grid; place-items: center; background: var(--lime); color: var(--pitch); clip-path: polygon(50% 0, 94% 24%, 94% 76%, 50% 100%, 6% 76%, 6% 24%); font-size: 15px; }
+    .match-tag { color: var(--muted); font-size: 10px; letter-spacing: 1.4px; text-transform: uppercase; }
+    main { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) 292px; gap: 28px; padding-top: 24px; }
+    .arena-column { min-width: 0; display: flex; flex-direction: column; }
+    .scorebar { min-height: 92px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 14px; padding: 0 8px 15px; }
+    .player { min-width: 0; }
+    .player:last-child { text-align: right; }
+    .player-label { display: block; color: var(--muted); font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px; }
+    .player-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 25px/1 var(--display); }
+    .score { display: flex; align-items: center; gap: 12px; font: 800 45px/.9 var(--display); }
+    .score-sep { color: #74877a; font: 400 22px var(--mono); }
+    .rounds { display: flex; justify-content: center; align-items: center; gap: 8px; height: 28px; }
+    .round-dot { width: 12px; aspect-ratio: 1; border: 1px solid #718477; border-radius: 50%; }
+    .round-dot.goal { background: var(--lime); border-color: var(--lime); }
+    .round-dot.saved { background: var(--coral); border-color: var(--coral); }
+    .round-dot.active { outline: 1px solid var(--cream); outline-offset: 3px; }
+    .scene { position: relative; flex: 1; min-height: 350px; overflow: hidden; background: linear-gradient(180deg, #244238 0%, #1c3a30 67%, #375545 67%, #355242 100%); border: 1px solid #456153; }
+    .scene::before { content: ''; position: absolute; inset: 0; opacity: .16; background: repeating-linear-gradient(90deg, transparent 0 10%, #b1d79d 10% 20%); }
+    .stadium { position: absolute; inset: 0 0 auto; height: 37%; background: linear-gradient(180deg, #142720 0%, #1b3128 100%); border-bottom: 1px solid #718072; }
+    .crowd { position: absolute; inset: 9% 0 0; opacity: .52; background-image: radial-gradient(circle, #d7f36a 1px, transparent 1.8px), radial-gradient(circle, #ff765e 1px, transparent 2px), radial-gradient(circle, #e6e2d4 1px, transparent 1.8px); background-size: 19px 16px, 23px 20px, 29px 18px; background-position: 0 0, 7px 4px, 13px 10px; mask-image: linear-gradient(180deg, #000 0%, transparent 88%); }
+    .stadium-light { position: absolute; top: 4%; width: 22%; height: 24%; background: radial-gradient(ellipse, #e2edb53b, transparent 70%); }
+    .stadium-light.left { left: 3%; }
+    .stadium-light.right { right: 3%; }
+    .pitch-mark { position: absolute; border: 1px solid #c9dbbe33; }
+    .pitch-mark.box { width: min(60%, 570px); height: 31%; left: 50%; bottom: -1px; transform: translateX(-50%); border-bottom: 0; }
+    .pitch-mark.arc { width: min(23%, 210px); height: 14%; left: 50%; bottom: 1%; transform: translateX(-50%); border-radius: 50% 50% 0 0; }
+    .spot { position: absolute; left: 50%; bottom: 17%; width: 5px; height: 5px; background: #e8efdf; border-radius: 50%; transform: translateX(-50%); }
+    .goal { position: absolute; left: 50%; top: 17%; width: min(60%, 520px); height: 48%; transform: translateX(-50%); border: 8px solid #ecebdc; border-bottom: 5px solid #dedecf; box-shadow: 0 0 24px #dff3cc33, 0 8px 0 #111b18; background: repeating-linear-gradient(90deg, #ecf1df1b 0 1px, transparent 1px 8%), repeating-linear-gradient(0deg, #ecf1df1b 0 1px, transparent 1px 8%); }
+    .goal::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, #f8f6e70b, transparent); }
+    .keeper { position: absolute; z-index: 3; left: 50%; bottom: 23%; width: 42px; height: 88px; transform: translateX(-50%); transition: left .42s cubic-bezier(.2,.8,.2,1), transform .42s; }
+    .keeper .body { position: absolute; left: 9px; top: 27px; width: 24px; height: 43px; border-radius: 11px 11px 5px 5px; background: var(--coral); border: 2px solid #ffb09d; }
+    .keeper .head { position: absolute; left: 14px; top: 8px; width: 15px; height: 17px; border-radius: 50%; background: #d6a17f; }
+    .keeper .arm { position: absolute; top: 30px; width: 28px; height: 8px; border-radius: 6px; background: #d6a17f; transform-origin: 4px 4px; }
+    .keeper .arm.left { left: 0; transform: rotate(25deg); }
+    .keeper .arm.right { right: -9px; transform: rotate(155deg); transform-origin: 24px 4px; }
+    .keeper .leg { position: absolute; top: 66px; width: 10px; height: 23px; background: #d9e3ce; border-radius: 3px; }
+    .keeper .leg.left { left: 10px; transform: rotate(9deg); }
+    .keeper .leg.right { right: 10px; transform: rotate(-9deg); }
+    .keeper.dive-left { transform: translateX(-50%) rotate(-63deg) translate(-30px, -10px); }
+    .keeper.dive-right { transform: translateX(-50%) rotate(63deg) translate(30px, -10px); }
+    .keeper.dive-center { transform: translateX(-50%) scale(1.13); }
+    .ball { position: absolute; z-index: 4; left: 50%; bottom: 14%; width: 19px; height: 19px; border: 1px solid #202620; border-radius: 50%; background: radial-gradient(circle at 35% 31%, #fff 0 18%, #d7d8cc 20% 54%, #282d29 56% 63%, #e8e8da 65%); box-shadow: 0 3px 4px #07130f99; transform: translate(-50%, 50%); transition: left .66s cubic-bezier(.14,.68,.22,1), bottom .66s ease, width .66s, height .66s; }
+    .ball.fly { width: 27px; height: 27px; }
+    .aim-marker { position: absolute; z-index: 2; left: 50%; top: 39%; width: 30px; height: 30px; border: 2px solid var(--lime); border-radius: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 17px #d7f36a77; transition: left .2s, top .2s; }
+    .aim-marker::before, .aim-marker::after { content: ''; position: absolute; background: var(--lime); }
+    .aim-marker::before { width: 1px; height: 42px; left: 12px; top: -8px; }
+    .aim-marker::after { height: 1px; width: 42px; top: 12px; left: -8px; }
+    .result { position: absolute; z-index: 5; inset: 0; display: grid; place-items: center; pointer-events: none; opacity: 0; transition: opacity .25s; }
+    .result.visible { opacity: 1; }
+    .result span { padding: 7px 17px 9px; color: var(--pitch); background: var(--lime); font: 900 clamp(42px, 7vw, 82px)/.9 var(--display); transform: rotate(-4deg); }
+    .result.saved span { background: var(--coral); }
+    .phase-ribbon { position: absolute; z-index: 5; left: 16px; top: 15px; padding: 8px 10px; color: var(--pitch); background: var(--lime); font-size: 9px; letter-spacing: 1px; text-transform: uppercase; }
+    .phase-ribbon.keeper-phase { background: var(--coral); }
+    .privacy-screen { position: absolute; z-index: 8; inset: 0; display: grid; place-items: center; padding: 20px; background: #10251feF; backdrop-filter: blur(7px); text-align: center; }
+    .privacy-screen.hidden { display: none; }
+    .privacy-box { width: min(100%, 350px); }
+    .privacy-eyebrow { color: var(--coral); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; }
+    .privacy-box h2 { margin: 8px 0 17px; font: 800 44px/.95 var(--display); text-transform: uppercase; }
+    .privacy-box button { min-height: 44px; padding: 0 20px; border: 0; color: var(--pitch); background: var(--lime); cursor: pointer; font: 700 16px var(--display); text-transform: uppercase; }
+    .privacy-box button:hover { background: white; }
+    .controls { display: flex; align-items: center; gap: 14px; padding: 14px 0 0; min-height: 88px; }
+    .zones { flex: 1; display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; }
+    .zone, .power-button, .action-button { border: 1px solid var(--line); background: #192f27; cursor: pointer; transition: border-color .15s, background .15s, color .15s, transform .15s; }
+    .zone { min-height: 54px; padding: 5px 3px; text-align: center; }
+    .zone:hover, .zone.selected { border-color: var(--lime); background: #294337; }
+    .zone.selected .zone-dot { background: var(--lime); box-shadow: 0 0 10px #d7f36a77; }
+    .zone-dot { display: block; width: 9px; height: 9px; margin: 0 auto 6px; border: 1px solid #9cad97; border-radius: 50%; }
+    .zone span:last-child { color: #c0c8b9; font-size: 8px; }
+    .power-control { min-width: 133px; }
+    .power-label { display: flex; justify-content: space-between; margin-bottom: 7px; color: var(--muted); font-size: 9px; text-transform: uppercase; }
+    .power-buttons { display: flex; gap: 4px; }
+    .power-button { flex: 1; height: 32px; font-size: 10px; }
+    .power-button.selected { color: var(--pitch); background: var(--lime); border-color: var(--lime); }
+    .action-button { min-width: 116px; min-height: 54px; color: var(--pitch); border-color: var(--lime); background: var(--lime); font: 800 17px var(--display); text-transform: uppercase; }
+    .action-button:hover:not(:disabled) { background: white; border-color: white; transform: translateY(-2px); }
+    .action-button:disabled { opacity: .38; cursor: default; }
+    aside { display: flex; flex-direction: column; border-left: 1px solid var(--line); padding-left: 24px; }
+    .side-heading { margin: 0 0 15px; font: 800 22px/1 var(--display); text-transform: uppercase; }
+    .status { padding: 13px 0 17px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .status-label { color: var(--muted); font-size: 9px; letter-spacing: 1.2px; text-transform: uppercase; }
+    .status-text { min-height: 45px; margin-top: 7px; font: 600 21px/1.05 var(--display); }
+    .status-text em { color: var(--lime); font-style: normal; }
+    .turn-list { display: grid; gap: 0; margin-top: 9px; }
+    .turn-row { min-height: 54px; display: grid; grid-template-columns: 28px 1fr 28px; align-items: center; gap: 9px; border-bottom: 1px solid #ffffff0d; }
+    .turn-num { color: #74877a; font-size: 10px; }
+    .turn-name { color: var(--muted); font-size: 11px; }
+    .turn-icon { justify-self: end; width: 21px; height: 21px; display: grid; place-items: center; border: 1px solid #52675a; border-radius: 50%; color: #95a597; font-size: 10px; }
+    .turn-icon.goal { color: var(--pitch); border-color: var(--lime); background: var(--lime); }
+    .turn-icon.saved { color: var(--pitch); border-color: var(--coral); background: var(--coral); }
+    .turn-icon.current { border-color: var(--cream); color: var(--cream); }
+    .side-bottom { margin-top: auto; padding-top: 22px; }
+    .power-meter { height: 4px; background: #34493e; margin: 10px 0 15px; }
+    .power-fill { width: 58%; height: 100%; background: var(--coral); transition: width .2s; }
+    .side-note { display: flex; justify-content: space-between; color: var(--muted); font-size: 9px; text-transform: uppercase; }
+    .restart { width: 100%; min-height: 42px; color: var(--ink); background: transparent; border: 1px solid var(--line); cursor: pointer; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; }
+    .restart:hover { border-color: var(--ink); }
+    .name-entry { display: flex; gap: 8px; margin-top: 21px; }
+    .name-entry label { flex: 1; min-width: 0; }
+    .name-entry span { display: block; margin-bottom: 5px; color: var(--muted); font-size: 8px; letter-spacing: 1px; text-transform: uppercase; }
+    .name-entry input { width: 100%; min-width: 0; padding: 8px 7px; border: 1px solid var(--line); outline: none; color: var(--ink); background: #142a23; font: 11px var(--mono); }
+    .name-entry input:focus { border-color: var(--lime); }
+    footer { display: flex; justify-content: space-between; padding-top: 15px; color: #728477; font-size: 9px; letter-spacing: .8px; text-transform: uppercase; }
+
+    @media (max-width: 900px) {
+      .shell { padding: 17px 20px 22px; }
+      main { grid-template-columns: minmax(0, 1fr) 240px; gap: 19px; }
+      aside { padding-left: 18px; }
+      .controls { flex-wrap: wrap; }
+      .zones { flex-basis: 100%; }
+      .power-control { flex: 1; }
+    }
+    @media (max-width: 640px) {
+      .shell { padding: 14px 14px 18px; }
+      header { padding-bottom: 12px; }
+      .brand { font-size: 20px; }
+      .match-tag { font-size: 8px; }
+      main { display: flex; flex-direction: column; gap: 17px; padding-top: 13px; }
+      .scorebar { min-height: 75px; padding-bottom: 7px; }
+      .player-name { font-size: 21px; }
+      .score { gap: 8px; font-size: 38px; }
+      .rounds { gap: 7px; }
+      .round-dot { width: 10px; }
+      .scene { flex: none; height: clamp(310px, 78vw, 420px); min-height: 0; }
+      .goal { top: 18%; height: 43%; width: 74%; }
+      .pitch-mark.box { width: 85%; }
+      .keeper { bottom: 27%; }
+      .ball { bottom: 18%; }
+      .aim-marker { top: 40%; }
+      .controls { padding-top: 11px; gap: 9px; }
+      .zone { min-height: 48px; }
+      .zone span:last-child { font-size: 7px; }
+      .power-control { min-width: 0; }
+      .action-button { min-width: 102px; }
+      aside { border-left: 0; border-top: 1px solid var(--line); padding: 15px 0 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0 15px; }
+      .side-heading { grid-column: 1 / -1; margin-bottom: 11px; }
+      .status { grid-column: 1 / -1; padding: 10px 0; }
+      .status-text { min-height: 0; }
+      .turn-list { grid-column: 1 / -1; grid-template-columns: repeat(5, 1fr); margin-top: 8px; }
+      .turn-row { min-height: 46px; grid-template-columns: 1fr 22px; gap: 3px; }
+      .turn-row .turn-name { display: none; }
+      .turn-icon { grid-column: 2; }
+      .turn-num { grid-row: 1; }
+      .side-bottom { display: contents; }
+      .power-display { grid-column: 1; padding-top: 15px; }
+      .name-entry { grid-column: 1 / -1; order: 2; margin-top: 14px; }
+      .restart { grid-column: 2; align-self: end; margin-top: 15px; }
+      footer { padding-top: 13px; font-size: 8px; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; } }
+
+    [hidden] { display: none !important; }
+    .lobby { display: grid; grid-template-columns: minmax(100px, 150px) auto minmax(120px, 160px) auto 1fr; gap: 9px; align-items: end; padding: 14px 0 17px; border-bottom: 1px solid var(--line); }
+    .name-field, .code-field { min-width: 0; }
+    .name-field span, .code-field span { display: block; margin-bottom: 5px; color: var(--muted); font-size: 8px; letter-spacing: 1px; text-transform: uppercase; }
+    .name-field input, .code-field input { width: 100%; height: 38px; padding: 0 10px; border: 1px solid var(--line); outline: none; color: var(--ink); background: #142a23; font: 12px var(--mono); }
+    .name-field input:focus, .code-field input:focus { border-color: var(--lime); }
+    .lobby-button, .room-badge button { min-height: 38px; padding: 0 12px; border: 1px solid var(--line); background: #19332b; cursor: pointer; font-size: 9px; letter-spacing: .5px; text-transform: uppercase; }
+    .lobby-button:hover, .room-badge button:hover { border-color: var(--ink); }
+    .lobby-button.primary { color: var(--pitch); border-color: var(--lime); background: var(--lime); font-weight: 700; }
+    .lobby-meta { min-width: 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+    .connection-state, .role-name { color: var(--muted); font-size: 8px; letter-spacing: .8px; }
+    .connection-state.connected { color: var(--lime); }
+    .room-badge { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: 8px; letter-spacing: .8px; }
+    .room-badge strong { color: var(--lime); font: 500 15px var(--mono); letter-spacing: 2px; }
+    .room-badge button { min-height: 30px; padding: 0 8px; font-size: 8px; }
+    .join-error { grid-column: 1 / -1; min-height: 0; color: var(--coral); font-size: 10px; }
+    .lobby.in-room .name-field, .lobby.in-room > .lobby-button, .lobby.in-room .code-field { display: none; }
+    .lobby.in-room { min-height: 62px; grid-template-columns: 1fr; padding: 10px 0; }
+    .lobby.in-room .lobby-meta { justify-content: space-between; }
+    .online-dot { display: inline-block; width: 7px; height: 7px; margin-right: 4px; border: 1px solid #718477; border-radius: 50%; vertical-align: 1px; }
+    .online-dot.online { border-color: var(--lime); background: var(--lime); box-shadow: 0 0 8px #d7f36a77; }
+    .player-label { display: flex; align-items: center; }
+    .player-name { display: block; }
+    .goal { overflow: visible; cursor: crosshair; touch-action: none; }
+    .goal.keeper-active { cursor: grab; }
+    .goal.keeper-active:active { cursor: grabbing; }
+    .keeper { position: absolute; z-index: 4; left: 50%; top: 76%; bottom: auto; width: 50px; height: 93px; transform: translate(-50%, -50%); transition: left 65ms linear, top 65ms linear; pointer-events: none; filter: drop-shadow(0 5px 3px #101a16aa); }
+    .keeper .head { left: 17px; top: 4px; width: 16px; height: 18px; background: linear-gradient(135deg, #edc3a2, #b97856); }
+    .keeper .body { left: 9px; top: 23px; width: 32px; height: 39px; border: 2px solid #ffc1af; border-radius: 11px 11px 6px 6px; background: linear-gradient(110deg, #ff917a, #e75248); }
+    .keeper .body::after { content: '1'; position: absolute; inset: 9px 0 auto; color: #fff1df; text-align: center; font: 700 15px var(--display); }
+    .keeper .arm { top: 27px; width: 27px; height: 9px; background: linear-gradient(#f1bd9b, #bd805e); }
+    .keeper .arm.left { left: -7px; transform: rotate(28deg); }
+    .keeper .arm.right { right: -7px; transform: rotate(-28deg); }
+    .keeper .arm::after { content: ''; position: absolute; right: -4px; top: -2px; width: 12px; height: 12px; border: 1px solid #f4edcf; border-radius: 50% 50% 45% 45%; background: var(--lime); }
+    .keeper .leg { top: 59px; width: 11px; height: 29px; background: linear-gradient(90deg, #e6e9d8, #afb9aa); }
+    .keeper .leg.left { left: 12px; transform: rotate(8deg); }
+    .keeper .leg.right { right: 12px; transform: rotate(-8deg); }
+    .ball { z-index: 6; left: 50%; top: 88%; bottom: auto; width: 18px; height: 18px; transform: translate(-50%, -50%); }
+    .aim-marker { z-index: 5; pointer-events: none; }
+    .striker-controls, .keeper-controls { width: 100%; min-height: 74px; display: flex; align-items: center; gap: 18px; }
+    .shot-power { flex: 1; display: grid; gap: 9px; color: var(--muted); font-size: 9px; letter-spacing: 1px; text-transform: uppercase; }
+    .shot-power span { display: flex; justify-content: space-between; align-items: center; }
+    .shot-power strong { color: var(--lime); font-weight: 500; }
+    .shot-power input { width: 100%; accent-color: var(--lime); cursor: pointer; }
+    .keeper-controls { color: var(--muted); font-size: 10px; line-height: 1.5; }
+    .online-guide { display: none; }
+    .restart { width: 100%; min-height: 40px; margin-top: 15px; }
+    .result { z-index: 8; }
+    .phase-ribbon { z-index: 7; }
+
+    @media (max-width: 900px) {
+      .lobby { grid-template-columns: minmax(90px, 1fr) auto minmax(100px, 1fr) auto; }
+      .lobby-meta { grid-column: 1 / -1; justify-content: space-between; }
+    }
+    @media (max-width: 640px) {
+      .lobby { grid-template-columns: minmax(90px, 1fr) auto; gap: 8px; }
+      .name-field { grid-column: 1; }
+      .lobby-button.primary { grid-column: 2; }
+      .code-field { grid-column: 1; }
+      #joinRoomButton { grid-column: 2; }
+      .lobby-meta { grid-column: 1 / -1; }
+      .room-badge { gap: 5px; }
+      .room-badge button { font-size: 7px; }
+      .striker-controls, .keeper-controls { min-height: 65px; gap: 10px; }
+      .keeper { transform: translate(-50%, -50%) scale(.82); }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div class="brand"><span class="brand-mark">5</span> ПЕНАЛЬТИ</div>
+      <div class="match-tag">Онлайн · два игрока · серия пенальти</div>
+    </header>
+    <section class="lobby" id="lobby" aria-label="Подключение к матчу">
+      <label class="name-field"><span>Твоё имя</span><input id="playerName" maxlength="14" value="Игрок"></label>
+      <button class="lobby-button primary" id="createRoomButton">Создать матч</button>
+      <label class="code-field"><span>Код комнаты</span><input id="roomCodeInput" maxlength="6" placeholder="A1B2C3" autocomplete="off"></label>
+      <button class="lobby-button" id="joinRoomButton">Войти</button>
+      <div class="lobby-meta"><span class="connection-state" id="connectionState">Подключаемся…</span><span class="room-badge" id="roomBadge" hidden>КОМНАТА <strong id="roomCodeDisplay"></strong><button id="copyRoomButton">КОПИРОВАТЬ КОД</button></span><span class="role-name" id="roleName"></span></div>
+      <div class="join-error" id="joinError" role="status"></div>
+    </section>
+    <main>
+      <section class="arena-column" aria-label="Игровое поле">
+        <div class="scorebar">
+          <div class="player"><span class="player-label"><span class="online-dot" id="strikerOnline"></span> Нападающий</span><strong class="player-name" id="strikerName">Ожидает игрока</strong></div>
+          <div class="score"><span id="scoreStriker">0</span><span class="score-sep">:</span><span id="scoreKeeper">0</span></div>
+          <div class="player"><span class="player-label"><span class="online-dot" id="keeperOnline"></span> Вратарь</span><strong class="player-name" id="keeperName">Ожидает игрока</strong></div>
+        </div>
+        <div class="rounds" id="rounds" aria-label="Счёт серии"></div>
+        <div class="scene" id="scene">
+          <div class="stadium"><div class="crowd"></div><div class="stadium-light left"></div><div class="stadium-light right"></div></div>
+          <div class="goal" id="goal" aria-label="Футбольные ворота">
+            <div class="keeper" id="keeper" aria-label="Вратарь"><span class="head"></span><span class="body"></span><span class="arm left"></span><span class="arm right"></span><span class="leg left"></span><span class="leg right"></span></div>
+          </div>
+          <div class="pitch-mark box"></div><div class="pitch-mark arc"></div><div class="spot"></div>
+          <div class="aim-marker" id="aimMarker" hidden></div>
+          <div class="ball" id="ball" hidden></div>
+          <div class="phase-ribbon" id="phaseRibbon">Ход нападающего</div>
+          <div class="result" id="result"><span id="resultText">ГОЛ!</span></div>
+        </div>
+        <div class="controls" id="controls">
+          <div class="striker-controls" id="strikerControls" hidden>
+            <label class="shot-power"><span>Сила удара <strong id="powerValue">СРЕДНЕ</strong></span><input id="powerSlider" type="range" min="1" max="3" value="2" step="1" aria-label="Сила удара"></label>
+            <button class="action-button" id="shootButton" disabled>Бить!</button>
+          </div>
+          <div class="keeper-controls" id="keeperControls" hidden><span>ПОЗИЦИЯ ВРАТАРЯ</span></div>
+        </div>
+      </section>
+      <aside>
+        <h1 class="side-heading">Матч-центр</h1>
+        <div class="status">
+          <div class="status-label">Сейчас</div>
+          <div class="status-text" id="statusText">Нападающий выбирает удар</div>
+        </div>
+        <div class="turn-list" id="turnList" aria-label="Удары серии"></div>
+        <div class="side-bottom">
+          <button class="restart" id="restartButton" hidden>↻ Новая серия</button>
+        </div>
+      </aside>
+    </main>
+    <footer><span>Пенальти · один на один</span><span id="roundLabel">Удар 1 / 5</span></footer>
+  </div>
+  <script type="application/json" id="legacy-client-code">
+    const directions = [
+      { name: 'Левый низ', short: 'ЛЕВО НИЗ', x: 19, y: 76 },
+      { name: 'Левый верх', short: 'ЛЕВО ВЕРХ', x: 19, y: 29 },
+      { name: 'По центру', short: 'ЦЕНТР', x: 50, y: 52 },
+      { name: 'Правый верх', short: 'ПРАВО ВЕРХ', x: 81, y: 29 },
+      { name: 'Правый низ', short: 'ПРАВО НИЗ', x: 81, y: 76 }
+    ];
+    const powerValues = [
+      { label: 'Точная', percent: 35 },
+      { label: 'Средняя', percent: 58 },
+      { label: 'Сильная', percent: 88 }
+    ];
+    const state = { phase: 'striker', direction: 2, power: 2, shots: [], keeperDirection: 2, locked: false, finished: false, animating: false };
+    const $ = (id) => document.getElementById(id);
+    const zones = $('zones');
+
+    directions.forEach((direction, index) => {
+      const button = document.createElement('button');
+      button.className = `zone${index === state.direction ? ' selected' : ''}`;
+      button.setAttribute('aria-label', direction.name);
+      button.innerHTML = `<span class="zone-dot"></span><span>${direction.short}</span>`;
+      button.addEventListener('click', () => selectDirection(index));
+      zones.append(button);
+    });
+    document.querySelectorAll('.power-button').forEach(button => {
+      button.addEventListener('click', () => {
+        if (state.phase !== 'striker' || state.finished || state.animating) return;
+        state.power = Number(button.dataset.power);
+        document.querySelectorAll('.power-button').forEach(item => item.classList.toggle('selected', item === button));
+        $('powerValue').textContent = powerValues[state.power - 1].label;
+        $('powerPercent').textContent = `${powerValues[state.power - 1].percent}%`;
+        $('powerFill').style.width = `${powerValues[state.power - 1].percent}%`;
+      });
+    });
+
+    function selectDirection(index) {
+      if (state.finished || state.animating || (state.phase !== 'striker' && state.phase !== 'keeper-ready')) return;
+      if (state.phase === 'striker') {
+        state.direction = index;
+        updateAim();
+      } else {
+        state.keeperDirection = index;
+      }
+      [...zones.children].forEach((button, buttonIndex) => button.classList.toggle('selected', buttonIndex === index));
+      $('actionButton').disabled = false;
+    }
+
+    function updateAim() {
+      const direction = directions[state.direction];
+      $('aimMarker').style.left = `${direction.x}%`;
+      $('aimMarker').style.top = `${direction.y}%`;
+      [...zones.children].forEach((button, index) => button.classList.toggle('selected', index === state.direction));
+    }
+
+    function setPhase(phase) {
+      state.phase = phase;
+      const isKeeper = phase === 'keeper-ready' || phase === 'keeper-hidden';
+      $('phaseRibbon').textContent = isKeeper ? 'Ход вратаря' : 'Ход нападающего';
+      $('phaseRibbon').classList.toggle('keeper-phase', isKeeper);
+      $('zones').setAttribute('aria-label', isKeeper ? 'Направление прыжка' : 'Направление удара');
+      $('powerControl').hidden = isKeeper;
+      $('aimMarker').style.visibility = isKeeper ? 'hidden' : 'visible';
+      $('actionButton').textContent = isKeeper ? 'Прыгать!' : 'Бить!';
+      $('statusText').innerHTML = isKeeper ? 'Вратарь выбирает прыжок' : 'Нападающий выбирает удар';
+      $('actionButton').disabled = false;
+      [...zones.children].forEach(button => button.classList.remove('selected'));
+      if (phase === 'keeper-ready') state.keeperDirection = 2;
+      if (phase === 'striker') {
+        [...zones.children].forEach((button, index) => button.classList.toggle('selected', index === state.direction));
+        updateAim();
+      }
+    }
+
+    function showKeeperHandoff() {
+      $('privacyTitle').textContent = `${$('keeperName').textContent}, ваш ход`;
+      $('privacyScreen').classList.remove('hidden');
+      $('privacyButton').onclick = () => {
+        $('privacyScreen').classList.add('hidden');
+        state.keeperDirection = 2;
+        setPhase('keeper-ready');
+      };
+      setPhase('keeper-hidden');
+      $('statusText').innerHTML = 'Удар готов. <em>Передайте ход вратарю</em>';
+    }
+
+    function takeShot() {
+      if (state.finished || state.animating) return;
+      if (state.phase === 'striker') {
+        state.locked = true;
+        $('aimMarker').style.visibility = 'hidden';
+        showKeeperHandoff();
+        return;
+      }
+      if (state.phase === 'keeper-ready') resolveShot();
+    }
+
+    function resolveShot() {
+      state.animating = true;
+      const target = directions[state.direction];
+      const keeperTarget = directions[state.keeperDirection];
+      const saved = state.direction === state.keeperDirection;
+      $('actionButton').disabled = true;
+      $('zones').querySelectorAll('button').forEach(button => button.disabled = true);
+      $('keeper').style.left = `${keeperTarget.x}%`;
+      $('keeper').className = `keeper ${keeperTarget.x < 40 ? 'dive-left' : keeperTarget.x > 60 ? 'dive-right' : 'dive-center'}`;
+      $('ball').classList.add('fly');
+      $('ball').style.left = `${target.x}%`;
+      $('ball').style.bottom = `${100 - target.y}%`;
+      $('statusText').textContent = saved ? 'Вратарь читает удар!' : 'Нападающий пробивает!';
+      window.setTimeout(() => {
+        $('resultText').textContent = saved ? 'СЕЙВ!' : 'ГОЛ!';
+        $('result').classList.toggle('saved', saved);
+        $('result').classList.add('visible');
+        state.shots.push({ saved, direction: state.direction, keeperDirection: state.keeperDirection });
+        renderScore();
+        $('statusText').innerHTML = saved ? 'Вратарь отбивает пенальти' : '<em>Мяч в сетке!</em>';
+        window.setTimeout(advanceMatch, 1450);
+      }, 700);
+    }
+
+    function advanceMatch() {
+      $('result').classList.remove('visible', 'saved');
+      $('ball').classList.remove('fly');
+      $('ball').style.left = '50%';
+      $('ball').style.bottom = '14%';
+      $('keeper').className = 'keeper';
+      $('keeper').style.left = '50%';
+      $('zones').querySelectorAll('button').forEach(button => button.disabled = false);
+      state.animating = false;
+      state.locked = false;
+      if (isMatchOver()) {
+        showFinalResult();
+        return;
+      }
+      state.direction = 2;
+      state.power = 2;
+      document.querySelector('[data-power="2"]').click();
+      setPhase('striker');
+      renderScore();
+      $('statusText').textContent = 'Нападающий выбирает удар';
+      $('actionButton').disabled = false;
+    }
+
+    function isMatchOver() {
+      const goals = state.shots.filter(shot => !shot.saved).length;
+      const saves = state.shots.filter(shot => shot.saved).length;
+      const remaining = 5 - state.shots.length;
+      if (state.shots.length < 5) return goals > saves + remaining || saves > goals + remaining;
+      return goals !== saves || state.shots.length >= 5;
+    }
+
+    function showFinalResult() {
+      state.finished = true;
+      const goals = state.shots.filter(shot => !shot.saved).length;
+      const saves = state.shots.filter(shot => shot.saved).length;
+      $('phaseRibbon').textContent = 'Матч завершён';
+      $('statusText').innerHTML = goals === saves ? 'Ничья по пенальти' : goals > saves ? `<em>${$('strikerName').textContent} побеждает!</em>` : `<em>${$('keeperName').textContent} побеждает!</em>`;
+      $('resultText').textContent = goals === saves ? 'НИЧЬЯ' : goals > saves ? 'ПОБЕДА!' : 'ПОБЕДА!';
+      $('result').classList.toggle('saved', goals < saves);
+      $('result').classList.add('visible');
+      $('actionButton').textContent = 'Серия окончена';
+      $('actionButton').disabled = true;
+    }
+
+    function renderScore() {
+      const goals = state.shots.filter(shot => !shot.saved).length;
+      const saves = state.shots.filter(shot => shot.saved).length;
+      $('scoreStriker').textContent = goals;
+      $('scoreKeeper').textContent = saves;
+      $('roundLabel').textContent = state.shots.length < 5 ? `Удар ${state.shots.length + 1} / 5` : `Ударов: ${state.shots.length}`;
+      $('rounds').innerHTML = Array.from({ length: 5 }, (_, index) => {
+        const shot = state.shots[index];
+        return `<span class="round-dot${shot ? shot.saved ? ' saved' : ' goal' : ''}${!shot && index === state.shots.length ? ' active' : ''}" aria-label="${shot ? shot.saved ? 'Сейв' : 'Гол' : `Удар ${index + 1}`}"></span>`;
+      }).join('');
+      $('turnList').innerHTML = Array.from({ length: 5 }, (_, index) => {
+        const shot = state.shots[index];
+        return `<div class="turn-row"><span class="turn-num">0${index + 1}</span><span class="turn-name">${shot ? shot.saved ? 'Сейв вратаря' : 'Гол нападающего' : 'Ожидает удара'}</span><span class="turn-icon${shot ? shot.saved ? ' saved' : ' goal' : index === state.shots.length ? ' current' : ''}">${shot ? shot.saved ? '×' : '✓' : index === state.shots.length ? '·' : '—'}</span></div>`;
+      }).join('');
+    }
+
+    function resetMatch() {
+      state.phase = 'striker';
+      state.direction = 2;
+      state.power = 2;
+      state.shots = [];
+      state.keeperDirection = 2;
+      state.locked = false;
+      state.finished = false;
+      state.animating = false;
+      $('result').classList.remove('visible', 'saved');
+      $('privacyScreen').classList.add('hidden');
+      $('ball').classList.remove('fly');
+      $('ball').style.left = '50%';
+      $('ball').style.bottom = '14%';
+      $('keeper').className = 'keeper';
+      $('keeper').style.left = '50%';
+      $('strikerName').textContent = $('strikerInput').value.trim() || 'Игрок 1';
+      $('keeperName').textContent = $('keeperInput').value.trim() || 'Игрок 2';
+      $('actionButton').textContent = 'Бить!';
+      $('actionButton').disabled = false;
+      document.querySelectorAll('.zone').forEach(button => button.disabled = false);
+      document.querySelector('[data-power="2"]').click();
+      $('aimMarker').style.visibility = 'visible';
+      setPhase('striker');
+      renderScore();
+    }
+
+    $('actionButton').addEventListener('click', takeShot);
+    $('restartButton').addEventListener('click', resetMatch);
+    $('strikerInput').addEventListener('change', resetMatch);
+    $('keeperInput').addEventListener('change', resetMatch);
+    document.addEventListener('keydown', event => {
+      if (event.target instanceof HTMLInputElement) return;
+      if (event.key === 'Enter' || event.key === ' ') {
+        if (!$('privacyScreen').classList.contains('hidden')) return;
+        event.preventDefault();
+        takeShot();
+      }
+      const keyMap = { ArrowLeft: 0, ArrowUp: 1, ArrowDown: 2, ArrowRight: 4, '1': 0, '2': 1, '3': 2, '4': 3, '5': 4 };
+      if (keyMap[event.key] !== undefined && !$('privacyScreen').classList.contains('hidden')) return;
+      if (event.key === 'ArrowRight' && state.phase === 'striker') selectDirection(3);
+      else if (keyMap[event.key] !== undefined) selectDirection(keyMap[event.key]);
+    });
+    resetMatch();
+  </script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/client.js"></script>
+</body>
+</html>
